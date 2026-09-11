@@ -1,5 +1,7 @@
 # Recipe Box API
 
+Owner: John Purvis – local clone for Maestro course.
+
 A small, working Flask + SQLite API for keeping recipes. Full CRUD, clean
 status codes - and **no authentication at all**. Anyone who can reach it can
 read, change, or delete anything. In BE104 you fix that: real users, hashed

@@ -1,6 +1,6 @@
 # Recipe Box API
 
-Owner: John Purvis – local clone for Maestro course.
+Owner: John Purvis - cloned from recipe-box-api skeleton by John S. Berta
 
 A small, working Flask + SQLite API for keeping recipes. Full CRUD, clean
 status codes - and **no authentication at all**. Anyone who can reach it can
@@ -38,3 +38,10 @@ curl -X DELETE http://127.0.0.1:5000/recipes/1
 
 `is_public` is stored on every recipe but nothing enforces it yet - by the end
 of Unit 3, private recipes will only be visible to their owners.
+
+## Swagger Docs
+http://localhost:5000/apidocs/
+
+## Other tools
+Postman - https://www.postman.com/
+Fiddler Classic - https://www.telerik.com/fiddler/fiddler-classic

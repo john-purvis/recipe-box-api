@@ -15,12 +15,12 @@ status codes - and Flask JWT authentication.
      1. view, add, update, and delete any recipes
      2. view, add, update, and delete users
 
-Their is an 'admin' user that comes already installed.
+An 'admin' user comes already installed.
 The default password is super_secret_password_for_admin_user and may be changed.
 
-There is a .env file that contains database information and the system key used
+A .env file contains database information and the system key used
 for JWT authentication and authorization.  This file is required and should be
-created with the format:
+created with at least the two keys below in this format:
 
 # .env
 JWT_SECRET_KEY=<Your JWT key>

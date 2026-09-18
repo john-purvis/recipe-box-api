@@ -11,3 +11,6 @@ __pycache__/
 
 # Secrets - never commit these
 .env
+
+# DB Browser work files
+*.sqbpro

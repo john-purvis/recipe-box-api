@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS "users" (
 
     -- Boolean constraint (Restricts input strictly to 0 or 1)
     CONSTRAINT hc_boolean_check CHECK (is_admin IN (0, 1))
+	-- Non-blank constraint (Restrict password_hash to not '')
+	CONSTRAINT hc_password_hash_check CHECK (length(trim(password_hash)) > 0)
 );
 CREATE TABLE IF NOT EXISTS recipes (
 (

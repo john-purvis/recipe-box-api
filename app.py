@@ -283,10 +283,6 @@ def list_recipes(**kwargs):
     security:
       - AuthKey: []  # <--- Tells Swagger to fetch the token from the lock box
     responses:
-        401:
-            description: Unauthorized (not logged in)
-        403:
-            description: Access denied (not logged in)
         200:
             description: A list of recipes
             content:
@@ -308,6 +304,10 @@ def list_recipes(**kwargs):
                         type: string
                     is_public:
                         type: boolean
+        401:
+            description: Unauthorized (not logged in)
+        403:
+            description: Access denied (not logged in)
     """
     # Extract from kwargs
     user_id_str = kwargs.get('current_user_id')
@@ -392,10 +392,10 @@ def create_recipe(**kwargs):
     responses:
       201:
         description: Recipe created successfully
-      401:
-        description: Unauthorized (not logged in)
       400:
         description: Invalid request body
+      401:
+        description: Unauthorized (not logged in)
       403:
         description: Access denied (not logged in)
       409:
@@ -630,14 +630,6 @@ def update_user(user_id, **kwargs):
             phone:
               type: string
     responses:
-      401:
-        description: Unauthorized (not logged in)
-      403:
-        description: Access denied (not the owner or an admin)
-      404:
-        description: User not found
-      409:
-        description: A user with that email or phone number already exists
       200:
         description: User updated successfully
         content:
@@ -653,6 +645,16 @@ def update_user(user_id, **kwargs):
                   type: string
                 is_admin:
                   type: boolean
+      400:
+        description: Invalid request body
+      401:
+        description: Unauthorized (not logged in)
+      403:
+        description: Access denied (not the owner or an admin)
+      404:
+        description: User not found
+      409:
+        description: A user with that email or phone number already exists
     """
     # Extract from kwargs
     user_id_str = kwargs.get('current_user_id')

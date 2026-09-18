@@ -37,45 +37,62 @@ Use 'python app.py' to run the flask web application
 ```
 Requires Python 3.10+ and Flask (`pip install -r requirements.txt`).
 
+## Homepage
 
-## Endpoints
+http://127.0.0.1:5000 will display a landing page that describes the API and provides other links
+
+## API documentation and test
+
+http://127.0.0.1:5000/apidocs/
+
+## Endpoints (Open)
 
 | Method | Path         | Success          | Errors                                                |
 |--------|--------------|------------------|-------------------------------------------------------|
-| GET    | /recipes     | 200              | 403 not authorized                                    |
-| GET    | /recipes/&lt;id&gt;   | 200     | 403 · 404                                             |
-| POST   | /recipes     | 201              | 400 bad body · 403 · 409 duplicate title              |
-| PATCH  | /recipes/&lt;id&gt;   | 200     | 400 · 403 · 404 · 409                                 |
-| DELETE | /recipes/&lt;id&gt;   | 204     | 403 · 404                                             |
-|                                                                                                  |
-| `is_public` is stored on every recipe and defaults to 'True'                                     |
-| recipes marked private will only be visible to their owners and admins.                          |
-|                                                                                                  |
-| POST   | /login       | 200              | 400 bad body · 401 invalid username or password       |
-| POST   | /logout      | 200              | 403                                                   |
 | POST   | /register    | 201 user created | 400 bad body · 409 duplicate username / email / phone |
-| PATCH  | /users/&lt;id&gt;   | 200       | 400 · 403 · 404 · 409                                 |
-| DELETE | /users/&lt;id&gt;   | 204       | 403 · 404                                             |
+| POST   | /login       | 200              | 400 · 401 invalid username or password                |
+
+## Endpoints (Bearer <Authkey> required)
+
+| Method | Path         | Success          | Errors                                                |
+|--------|--------------|------------------|-------------------------------------------------------|
+| POST   | /logout      | 200              | 403                                                   |
+|--------|--------------|------------------|-------------------------------------------------------|
+| GET    | /recipes     | 200              | 400 · 401 · 403 not authorized · 409                  |
+| GET    | /recipes/&lt;id&gt;   | 200     | 401 · 403 · 404                                       |
+| POST   | /recipes     | 201              | 400 bad body · 401 · 403 · 409 duplicate title        |
+| PATCH  | /recipes/&lt;id&gt;   | 200     | 400 · 401 · 403 · 404 · 409                           |
+| DELETE | /recipes/&lt;id&gt;   | 204     | 401 · 403 · 404                                       |
+|--------|--------------|------------------|-------------------------------------------------------|
+| PATCH  | /users/&lt;id&gt;   | 200       | 400 · 401 · 403 · 404 · 409                           |
+| DELETE | /users/&lt;id&gt;   | 204       | 401 · 403 · 404                                       |
+
+An authorizaation key is obtained via successful login and then must be included as
+'-H "Authorization: Bearer <AuthKey>' for all other requests except registration.
+
+`is_public` is stored on every recipe and defaults to 'True'
+recipes marked private (not public) will only be visible to their owners and admins.
+
 
 ## Try it
 
 Display the API homepage:
 ```
-curl -i http://127.0.0.1:5000/
+curl -i -X GET http://127.0.0.1:5000/
 ```
 EXPECT:
      200 OK with html file contents
 
 Display the API docs:
 ```
-curl -i http://127.0.0.1:5000/apidocs/
+curl -i -X GET http://127.0.0.1:5000/apidocs/
 ```
 EXPECT:
      200 OK with html doc contents
 
 Create a user:
 ```
-curl -i http://127.0.0.1:5000/register -H "Content-Type: application/json" \
+curl -i -X POST http://127.0.0.1:5000/register -H "Content-Type: application/json" \
      -d '{"username": "testuser", "password": "test", "email": "test@testytester.com", "phone": "5558675309" }'
 ```
 EXPECT:
@@ -83,7 +100,7 @@ EXPECT:
 
 Login to obtain a JWT token (used in following methods):
 ```
-curl -i http://127.0.0.1:5000/login -H "Content-Type: application/json" \
+curl -i -X POST http://127.0.0.1:5000/login -H "Content-Type: application/json" \
      -d '{"username": "testuser", "password": "test" }'
 ```
 EXPECT:
@@ -93,7 +110,7 @@ EXPECT:
 
 List the recipes (not authorized):
 ```
-curl -i http://127.0.0.1:5000/recipes \
+curl -i -X GET http://127.0.0.1:5000/recipes \
      -H "Authorization: Bearer INVALID_TOKEN_STRING"
 ```
 EXPECT:
@@ -101,7 +118,7 @@ EXPECT:
 
 List the recipes (authorized):
 ```
-curl -i http://127.0.0.1:5000/recipes \
+curl -i -X GET http://127.0.0.1:5000/recipes \
  -H "Authorization: Bearer <YOUR_TOKEN_FROM_LOGIN_WITHOUT_QUOTES>"
 ```
 EXPECT:
@@ -109,7 +126,7 @@ EXPECT:
 
 Get one recipe (public):
 ```
-curl -i http://127.0.0.1:5000/recipes/1 \
+curl -i -X GET http://127.0.0.1:5000/recipes/1 \
      -H "Authorization: Bearer <YOUR_TOKEN_FROM_LOGIN_WITHOUT_QUOTES>"
 ```
 EXPECT:
@@ -118,7 +135,7 @@ EXPECT:
 
 Get one recipe (private):
 ```
-curl -i http://127.0.0.1:5000/recipes/3 \
+curl -i -X GET http://127.0.0.1:5000/recipes/3 \
      -H "Authorization: Bearer <YOUR_TOKEN_FROM_LOGIN_WITHOUT_QUOTES>"
 ```
 EXPECT:
@@ -128,7 +145,7 @@ EXPECT:
 
 Create your own recipe:
 ```
-curl -i POST http://127.0.0.1:5000/recipes -H "Content-Type: application/json" \
+curl -i -X POST http://127.0.0.1:5000/recipes -H "Content-Type: application/json" \
      -H "Authorization: Bearer <YOUR_TOKEN_FROM_LOGIN_WITHOUT_QUOTES>"
      -d '{"title": "Toast", "ingredients": "bread", "instructions": "Put in toaster and wait until brown.", "is_public": "False"}'
 ```
@@ -138,7 +155,7 @@ EXPECT:
 
 Update recipe:
 ```
-curl -i PATCH "http://localhost:5000/recipes/3" \
+curl -i -X PATCH "http://localhost:5000/recipes/3" \
      -H "accept: application/json" \
      -H "Authorization: Bearer <YOUR_TOKEN_FROM_LOGIN_WITHOUT_QUOTES>" \
      -H "Content-Type: application/json" -d "{ \"is_public\": true}"
@@ -149,7 +166,7 @@ EXPECT:
 
 Delete recipe:
 ```
-curl -i DELETE http://127.0.0.1:5000/recipes/1
+curl -i -X DELETE http://127.0.0.1:5000/recipes/1
      -H "accept: application/json" \
      -H "Authorization: Bearer <YOUR_TOKEN_FROM_LOGIN_WITHOUT_QUOTES>"
 ```
@@ -158,7 +175,7 @@ EXPECT:
 
 List user(s):
 ```
-curl -i GET "http://localhost:5000/users" \
+curl -i -X GET "http://localhost:5000/users" \
      -H "accept: application/json" \
      -H "Authorization: Bearer <YOUR_TOKEN_FROM_LOGIN_WITHOUT_QUOTES>"
 ```
@@ -167,7 +184,7 @@ EXPECT:
 
 Update user:
 ```
-curl -i PATCH "http://localhost:5000/users/1" \
+curl -i -X PATCH "http://localhost:5000/users/1" \
      -H "accept: application/json" \
      -H "Authorization: Bearer <YOUR_TOKEN_FROM_LOGIN_WITHOUT_QUOTES>" \
      -H "Content-Type: application/json" -d "{ \"phone\": \"1231231234\"}"
@@ -178,7 +195,7 @@ EXPECT:
 
 Delete user:
 ```
-curl -i DELETE "http://localhost:5000/users/1" \
+curl -i -X DELETE "http://localhost:5000/users/1" \
      -H "accept: application/json" \
      -H "Authorization: Bearer <YOUR_TOKEN_FROM_LOGIN_WITHOUT_QUOTES>"
 ```

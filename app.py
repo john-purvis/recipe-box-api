@@ -665,7 +665,7 @@ def update_user(user_id, **kwargs):
         return jsonify({"error": "access denied"}), 403
     pass_check = data.get("password")
     # check for blank password and remove it from the data dictionary to avoid storing a blank password hash
-    if pass_check == "":
+    if pass_check and pass_check.strip() == "":
         return jsonify({"error": "password cannot be blank"}), 400
     if pass_check:
         # remove "password" from data and store the hashed password in "password_hash"

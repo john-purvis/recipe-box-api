@@ -23,39 +23,38 @@ for JWT authentication and authorization.  This file is required and should be
 created with at least the two keys below in this format:
 
 # .env
-JWT_SECRET_KEY=<Your JWT key>
-DATABASE_NAME=<Your Database Name> (Defaults to recipes.db)
+JWT_SECRET_KEY=\<Your JWT key\>
+DATABASE_NAME=\<Your Database Name\> (Defaults to recipes.db)
 
 
 ## Run it
 
 ```
 Use 'python init_db.py' to initialize the database prior to first run
-```
+
 Use 'python app.py' to run the flask web application
 ```
-
 Requires Python 3.10+ and Flask (`pip install -r requirements.txt`).
 
 ## Endpoints
 
-| Method | Path | Success | Errors |
-|---|---|---|---|
-| GET | /recipes | 200 | 403 not authorized |
-| GET | /recipes/&lt;id&gt; | 200 | 403 · 404 |
-| POST | /recipes | 201 | 400 bad body · 403 · 409 duplicate title |
-| PATCH | /recipes/&lt;id&gt; | 200 | 400 · 403 · 404 · 409 |
-| DELETE | /recipes/&lt;id&gt; | 204 | 403 · 404 |
+| Method | Path         | Success          | Errors                                               |
+|--------|--------------|------------------|------------------------------------------------------|
+| GET    | /recipes     | 200              | 403 not authorized                                   |
+| GET    | /recipes/&lt;id&gt;   | 200     | 403 · 404                                            |
+| POST   | /recipes     | 201              | 400 bad body · 403 · 409 duplicate title             |
+| PATCH  | /recipes/&lt;id&gt;   | 200     | 400 · 403 · 404 · 409                                |
+| DELETE | /recipes/&lt;id&gt;   | 204     | 403 · 404                                            |
 
 `is_public` is stored on every recipe and defaults to 'True'
 recipes marked private will only be visible to their owners and admins.
 
-| POST | /login | 200 | 400 bad body · 401 invalid username or password |
-| POST | /logout | 200 | 403 |
+| POST   | /login       | 200              | 400 bad body · 401 invalid username or password       |
+| POST   | /logout      | 200              | 403                                                   |
 
-| POST | /register | 201 user created| 400 bad body · 409 duplicate username / email / phone |
-| PATCH | /users/&lt;id&gt; | 200 | 400 · 403 · 404 · 409 |
-| DELETE | /users/&lt;id&gt; | 204 | 403 · 404 |
+| POST   | /register    | 201 user created | 400 bad body · 409 duplicate username / email / phone |
+| PATCH  | /users/&lt;id&gt;   | 200       | 400 · 403 · 404 · 409                                 |
+| DELETE | /users/&lt;id&gt;   | 204       | 403 · 404                                             |
 
 
 ## Try it

@@ -262,6 +262,8 @@ def logout(**kwargs):
     responses:
         200:
             description: Logout successful
+        401:
+            description: Unauthorized (not logged in)
         403:
             description: Access denied (not logged in)
     """
@@ -281,6 +283,10 @@ def list_recipes(**kwargs):
     security:
       - AuthKey: []  # <--- Tells Swagger to fetch the token from the lock box
     responses:
+        401:
+            description: Unauthorized (not logged in)
+        403:
+            description: Access denied (not logged in)
         200:
             description: A list of recipes
             content:
@@ -333,6 +339,8 @@ def get_recipe(recipe_id, **kwargs):
     responses:
       200:
         description: Recipe found
+      401:
+        description: Unauthorized (not logged in)
       403:
         description: Access denied (not logged in)
       404:
@@ -384,6 +392,8 @@ def create_recipe(**kwargs):
     responses:
       201:
         description: Recipe created successfully
+      401:
+        description: Unauthorized (not logged in)
       400:
         description: Invalid request body
       403:
@@ -454,6 +464,8 @@ def update_recipe(recipe_id, **kwargs):
         description: Recipe updated successfully
       400:
         description: Invalid request body
+      401:
+        description: Unauthorized (not logged in)
       403:
         description: Access denied (not the owner or an admin)
       404:
@@ -520,6 +532,8 @@ def delete_recipe(recipe_id, **kwargs):
     responses:
       204:
         description: Recipe deleted successfully
+      401:
+        description: Unauthorized (not logged in)
       403:
         description: Access denied (not the owner or an admin)
       404:
@@ -554,6 +568,10 @@ def list_users(**kwargs):
     security:
       - AuthKey: []  # <--- Tells Swagger to fetch the token from the lock box
     responses:
+        401:
+            description: Unauthorized (not logged in)
+        403:
+            description: Access denied (not an admin)
         200:
             description: A list of users
             content:
@@ -612,6 +630,14 @@ def update_user(user_id, **kwargs):
             phone:
               type: string
     responses:
+      401:
+        description: Unauthorized (not logged in)
+      403:
+        description: Access denied (not the owner or an admin)
+      404:
+        description: User not found
+      409:
+        description: A user with that email or phone number already exists
       200:
         description: User updated successfully
         content:
@@ -637,6 +663,15 @@ def update_user(user_id, **kwargs):
     # check ownership for update operation - only the owner or an admin can update a user
     if str(user_id) != user_id_str and is_admin is not True:
         return jsonify({"error": "access denied"}), 403
+    pass_check = data.get("password")
+    # check for blank password and remove it from the data dictionary to avoid storing a blank password hash
+    if pass_check == "":
+        return jsonify({"error": "password cannot be blank"}), 400
+    if pass_check:
+        # remove "password" from data and store the hashed password in "password_hash"
+        plain_text = data.pop("password")
+        # Hash the password before storing it in the database
+        data["password_hash"] = generate_password_hash(plain_text)
     # authenticated and authorized to update the user
     db = get_db()
     fields, values = [], []
@@ -684,6 +719,8 @@ def delete_user(user_id, **kwargs):
     responses:
       204:
         description: User deleted successfully
+      401:
+        description: Unauthorized (not logged in)
       403:
         description: Access denied (not the owner or an admin)
       404:

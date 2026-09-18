@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"username"	    TEXT NOT NULL UNIQUE     , -- handle shown in the UI (must be unique)
 	"email"	        TEXT NOT NULL UNIQUE     , -- contact (must be unique)
     "phone"         TEXT NOT NULL UNIQUE     , -- contact (must be unique)
-	"password_hash"	TEXT NOT NULL DEFAULT '' , -- non-readable password representation (NOT reversible)
+	"password_hash"	TEXT NOT NULL            , -- non-readable password representation (NOT reversible)
 	"is_admin"      BOOLEAN DEFAULT 0          -- is user an administrator
 
     -- Boolean constraint (Restricts input strictly to 0 or 1)

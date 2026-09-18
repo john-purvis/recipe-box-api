@@ -57,7 +57,6 @@ Requires Python 3.10+ and Flask (`pip install -r requirements.txt`).
 | PATCH  | /users/&lt;id&gt;   | 200       | 400 · 403 · 404 · 409                                 |
 | DELETE | /users/&lt;id&gt;   | 204       | 403 · 404                                             |
 
-
 ## Try it
 
 Display the API homepage:
@@ -187,8 +186,9 @@ EXPECT:
      204 CONTENT REMOVED (if user is_admin)
      403 FORBIDDEN (if user is not admin)
 
+
 ## Swagger Docs
 http://localhost:5000/apidocs/
 
-## Other tools
-Postman - https://www.postman.com/
+## Postman
+https://www.postman.com/

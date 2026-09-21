@@ -8,6 +8,7 @@ import os
 import sqlite3
 from functools import wraps
 
+import jwt  # PyJWT
 from flasgger import Swagger
 from flask import Flask, g, json, jsonify, request, send_from_directory
 
@@ -131,6 +132,57 @@ def row_to_dict(row):
 
     return json_str
 
+################################################################################
+# ADDITIONS FOR WEEK 03 PyJWT AUTHENTICATION AND AUTHORIZATION
+################################################################################
+
+def get_identity_from_auth_header():
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None, "Missing or invalid Authorization header"
+
+    token = auth_header.removeprefix("Bearer ").strip()
+
+    try:
+        payload = jwt.decode(
+            token,
+            os.getenv("JWT_SECRET_KEY"),  # or whatever env var you already use
+            algorithms=["HS256"],
+        )
+    except jwt.InvalidTokenError:
+        return None, "Invalid token"
+
+    return payload.get("sub"), None
+
+@app.route("/whoami", methods=["GET"])
+def whoami():
+    """
+    Endpoint to return the user ID of the currently authenticated user.
+    ---
+    tags:
+      - Authentication
+    security:
+      - AuthKey: []  # <--- Tells Swagger to fetch the token from the lock box
+    responses:
+        200:
+            description: The user ID of the currently authenticated user
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            user_id:
+                                type: string
+        401:
+            description: Unauthorized (not logged in)
+    """
+    user_id, error = get_identity_from_auth_header()
+    if error:
+        return {"error": error}, 401
+
+    return {"user_id": user_id}, 200
+
+################################################################################
 
 @app.get("/")
 def home():
@@ -253,24 +305,24 @@ def login():
 @require_authorization
 def logout(**kwargs):
     """
-    User logout endpoint that invalidates the JWT token.
+    User logout endpoint in a stateless JWT system.
+
+    This does NOT invalidate the token on the server. Instead, the client
+    must delete its stored JWT and stop sending it on future requests.
     ---
     tags:
       - Login / Logout
     security:
-        - AuthKey: []  # <--- Tells Swagger to fetch the token from the lock box
+      - AuthKey: []
     responses:
-        200:
-            description: Logout successful
-        401:
-            description: Unauthorized (not logged in)
-        403:
-            description: Access denied (not logged in)
+      200:
+        description: Logout acknowledged; client should discard token
+      401:
+        description: Unauthorized (no valid token provided)
     """
-    # In a real application, you would implement token revocation here.
-    # For this example, we'll just return a success message.
-    return jsonify({'message': 'Logout successful'}), 200
-
+    return jsonify({
+        "message": "Logout successful. Please delete your token on the client."
+    }), 200
 
 @app.get("/recipes")
 @require_authorization

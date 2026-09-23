@@ -136,26 +136,60 @@ def row_to_dict(row):
 # ADDITIONS FOR WEEK 03 PyJWT AUTHENTICATION AND AUTHORIZATION
 ################################################################################
 
-def get_identity_from_auth_header():
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return None, "Missing or invalid Authorization header"
+# def get_identity_from_auth_header():
+#     auth_header = request.headers.get("Authorization", "")
+#     if not auth_header.startswith("Bearer "):
+#         return None, "Missing or invalid Authorization header"
 
-    token = auth_header.removeprefix("Bearer ").strip()
+#     token = auth_header.removeprefix("Bearer ").strip()
 
-    try:
-        payload = jwt.decode(
-            token,
-            os.getenv("JWT_SECRET_KEY"),  # or whatever env var you already use
-            algorithms=["HS256"],
-        )
-    except jwt.InvalidTokenError:
-        return None, "Invalid token"
+#     try:
+#         payload = jwt.decode(
+#             token,
+#             os.getenv("JWT_SECRET_KEY"),  # or whatever env var you already use
+#             algorithms=["HS256"],
+#         )
+#     except jwt.InvalidTokenError:
+#         return None, "Invalid token"
 
-    return payload.get("sub"), None
+#     return payload.get("sub"), None
+
+# @app.route("/whoami", methods=["GET"])
+# def whoami():
+#     """
+#     Endpoint to return the user ID of the currently authenticated user.
+#     ---
+#     tags:
+#       - Authentication
+#     security:
+#       - AuthKey: []  # <--- Tells Swagger to fetch the token from the lock box
+#     responses:
+#         200:
+#             description: The user ID of the currently authenticated user
+#             content:
+#                 application/json:
+#                     schema:
+#                         type: object
+#                         properties:
+#                             user_id:
+#                                 type: string
+#         401:
+#             description: Unauthorized (not logged in)
+#     """
+#     user_id, error = get_identity_from_auth_header()
+#     if error:
+#         return {"error": error}, 401
+
+#     return {"user_id": user_id}, 200
+
+################################################################################
+
+# Now the AI wants me to fix the whoami route using my own code...broke it for
+# a lesson now fix it for another.
 
 @app.route("/whoami", methods=["GET"])
-def whoami():
+@require_authorization
+def whoami(**kwargs):
     """
     Endpoint to return the user ID of the currently authenticated user.
     ---
@@ -175,13 +209,18 @@ def whoami():
                                 type: string
         401:
             description: Unauthorized (not logged in)
+        403:
+            description: Access denied (not the owner or an admin)
     """
-    user_id, error = get_identity_from_auth_header()
-    if error:
-        return {"error": error}, 401
+    # Extract from kwargs
+    user_id = kwargs.get('current_user_id')
+    is_admin = kwargs.get('is_admin')
+    # current_user = kwargs.get('current_user')
 
-    return {"user_id": user_id}, 200
+    return {"user_id": user_id, "is_admin": is_admin}, 200
 
+################################################################################
+################################################################################
 ################################################################################
 
 @app.get("/")

@@ -5,6 +5,10 @@ contains table DDL and seed data). If that file is missing it falls back to a
 minimal inline schema and seed list.
 
 Run once after cloning: python init_db.py
+
+NOTE:
+admin password = super_secret_password_for_admin_user
+other users password = winston
 """
 
 import sqlite3
@@ -48,31 +52,68 @@ CREATE TABLE IF NOT EXISTS recipes (
 
 """
 SEED_USERS = [
-    (0, "admin", "admin@recipe_box_api", "0000000000", \
-     "scrypt:32768:8:1$SYxXXuy01KOEZfMA$579b16bfe0004a331b6c07c6542bc7f7eae776196d15614bb88833c9cdb9bdacad5c8fc9e6170180d5b8c39afada1e2b014e32413a398017c82ff07b804d3501", 1)
+    (
+        0,
+        "admin",
+        "admin@recipe_box_api",
+        "0000000000", \
+        "scrypt:32768:8:1$SYxXXuy01KOEZfMA$579b16bfe0004a331b6c07c6542bc7f7eae776196d15614bb88833c9cdb9bdacad5c8fc9e6170180d5b8c39afada1e2b014e32413a398017c82ff07b804d3501",
+       1
+    ),
+    (
+        1,
+        "johnp",
+        "john@recipe_box_api",
+        "1234567890", \
+        "scrypt:32768:8:1$099rSfvhTV1ffmtV$3b1e538293d15a0ffe4dbf5f2dcb68398e6b710f13616f9c475e05ab8e64950fd18fd88cf63b2adf200b37f28f04ccd98481a2cc22f44aef2dd9f5bab604b600",
+       0
+    ),
+    (
+        2,
+        "alice",
+        "alice@recipe_box_api",
+        "1111111111", \
+        "scrypt:32768:8:1$099rSfvhTV1ffmtV$3b1e538293d15a0ffe4dbf5f2dcb68398e6b710f13616f9c475e05ab8e64950fd18fd88cf63b2adf200b37f28f04ccd98481a2cc22f44aef2dd9f5bab604b600",
+       0
+    ),
+    (
+        3,
+        "bob",
+        "bob@recipe_box_api",
+        "2222222222", \
+        "scrypt:32768:8:1$099rSfvhTV1ffmtV$3b1e538293d15a0ffe4dbf5f2dcb68398e6b710f13616f9c475e05ab8e64950fd18fd88cf63b2adf200b37f28f04ccd98481a2cc22f44aef2dd9f5bab604b600",
+       0
+    )
 ]
 SEED_RECIPES = [
     (
-        0,
+        3,
         "Shakshuka",
         "eggs, tomatoes, peppers, onion, cumin, paprika",
         "Simmer the sauce, crack in the eggs, cover until just set.",
         1,
     ),
     (
-        0,
+        1,
         "Overnight oats",
         "rolled oats, milk, yogurt, chia seeds, honey",
         "Stir everything together and refrigerate overnight.",
         1,
     ),
     (
-        0,
+        2,
         "Secret family hot sauce",
         "habaneros, garlic, vinegar, a secret ingredient",
         "If we wrote it down here, it wouldn't be a secret.",
         0,
     ),
+    (
+        2,
+        "Vegetable stir-fry",
+        "mixed vegetables, soy sauce, garlic, ginger",
+        "Stir-fry the vegetables until crisp-tender, then add sauce.",
+        1
+    )
 ]
 
 def main():

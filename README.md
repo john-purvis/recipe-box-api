@@ -59,13 +59,13 @@ http://127.0.0.1:5000/apidocs/
 | POST   | /logout      | 200              | 403                                                   |
 |--------|--------------|------------------|-------------------------------------------------------|
 | GET    | /recipes     | 200              | 400 · 401 · 403 not authorized · 409                  |
-| GET    | /recipes/&lt;id&gt;   | 200     | 401 · 403 · 404                                       |
+| GET    | /recipes/<id>| 200              | 401 · 403 · 404                                       |
 | POST   | /recipes     | 201              | 400 bad body · 401 · 403 · 409 duplicate title        |
-| PATCH  | /recipes/&lt;id&gt;   | 200     | 400 · 401 · 403 · 404 · 409                           |
-| DELETE | /recipes/&lt;id&gt;   | 204     | 401 · 403 · 404                                       |
+| PATCH  | /recipes/<id>| 200              | 400 · 401 · 403 · 404 · 409                           |
+| DELETE | /recipes/<id>| 204              | 401 · 403 · 404                                       |
 |--------|--------------|------------------|-------------------------------------------------------|
-| PATCH  | /users/&lt;id&gt;   | 200       | 400 · 401 · 403 · 404 · 409                           |
-| DELETE | /users/&lt;id&gt;   | 204       | 401 · 403 · 404                                       |
+| PATCH  | /users/<id>  | 200              | 400 · 401 · 403 · 404 · 409                           |
+| DELETE | /users/<id>  | 204              | 401 · 403 · 404                                       |
 
 An authorizaation key is obtained via successful login and then must be included as
 '-H "Authorization: Bearer <AuthKey>' for all other requests except registration.

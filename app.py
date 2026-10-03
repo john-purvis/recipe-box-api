@@ -768,7 +768,7 @@ def update_user(user_id, **kwargs):
     # authenticated and authorized to update the user
     db = get_db()
     fields, values = [], []
-    for column in ("password", "email", "phone"):
+    for column in ("password_hash", "email", "phone"):
         if column in data:
             fields.append(f"{column} = ?")
             values.append(data[column])

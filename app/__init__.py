@@ -15,9 +15,24 @@ from flask_jwt_extended import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from .config import DevelopmentConfig, ProductionConfig, TestingConfig
 
-def create_app():
+
+def create_app(config_name="development"):
   app = Flask(__name__)
+
+  config_classes = {
+      "development": DevelopmentConfig,
+      "testing": TestingConfig,
+      "production": ProductionConfig,
+  }
+  app.config.from_object(config_classes[config_name])
+
+  # Fetch variables from environment fallback to strings if missing
+  JSON_SORT_KEYS = app.config["JSON_SORT_KEYS"]
+  JWT_SECRET_KEY = app.config["JWT_SECRET_KEY"]
+  DATABASE       = app.config["DATABASE"]
+  app.json.sort_keys = JSON_SORT_KEYS
 
   # The securityDefinitions below is used by Swagger to describe the
   # authentication mechanism for the API.
@@ -41,15 +56,6 @@ def create_app():
 
   swagger = Swagger(app, template=swagger_data)
   jwt_manager = JWTManager(app)
-
-  # Turn off automatic alphabetical sorting of JSON keys in responses for better readability
-  app.config["JSON_SORT_KEYS"] = os.environ.get("JSON_SORT_KEYS", "false").lower() == "false"
-  # The modern way to disable alphabetical key sorting in Flask 2.3+
-  app.json.sort_keys = False
-
-  # Fetch variables from environment fallback to strings if missing
-  app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'default-safe-fallback-key-for-local-dev')
-  DATABASE = os.environ.get('DATABASE_NAME', 'recipes.db')
 
   def get_db():
       if "db" not in g:

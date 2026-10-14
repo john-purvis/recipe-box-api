@@ -209,3 +209,15 @@ http://localhost:5000/apidocs/
 
 ## Postman
 https://www.postman.com/
+
+## Development Notes
+* If this environment is copied or moved then the environment variables must be
+  changed in the python config files.
+* Edit the `pyvenv.cfg` file and edit as needed all scripts in the
+  `./venv/Scripts` folder.
+* Use `./venv/Scripts/deactivate` to deactivate the incorrect environment.
+* Use `./venv/Scripts/Activate.ps1` to set the new environment.
+* Use `$env:VIRTUAL_ENV -split ';'` in powershell to view the environment variable
+  that should point to the correct environment location.
+* Use `pip install -r requirements.txt` if the libraries need to be installed
+  once the correct virtual environment is set.

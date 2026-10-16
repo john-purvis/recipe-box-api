@@ -9,8 +9,6 @@ The important detail here is that this file can be executed directly as a script
 or imported as a module. In either case, we need the Flask app object to be
 available under the name `application`.
 """
-
-import sys
 from pathlib import Path
 
 from flask import send_from_directory

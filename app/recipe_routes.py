@@ -1,8 +1,14 @@
-import sqlite3
-
+# app/recipe_routes.py
 from flask import Blueprint, jsonify, request
 
-from .common import require_authorization
+from .middleware import require_authorization
+from .services.recipe_service import (
+    create_recipe_for_user,
+    delete_recipe_for_user,
+    get_recipe_for_user,
+    list_recipes_for_user,
+    update_recipe_for_user,
+)
 
 recipes_bp = Blueprint("recipes", __name__)
 
@@ -43,19 +49,10 @@ def list_recipes(**kwargs):
       403:
         description: Access denied (not logged in)
     """
-    from .common import get_db, row_to_dict
-
-    # Extract from kwargs
-    user_id_str = kwargs.get('current_user_id')
-    is_admin = kwargs.get('is_admin')
-    # current_user = kwargs.get('current_user')
-    if is_admin:
-        # Admin users can see all recipes
-        rows = get_db().execute("SELECT * FROM recipes ORDER BY id").fetchall()
-    else:
-        # Non-admin users can only see their own recipes or public recipes
-        rows = get_db().execute("SELECT * FROM recipes WHERE (user_id = ? OR is_public = 1) ORDER BY id", (user_id_str,)).fetchall()
-    return jsonify([row_to_dict(r) for r in rows]), 200
+    user_id_str = kwargs.get("current_user_id")
+    is_admin = kwargs.get("is_admin")
+    recipes = list_recipes_for_user(user_id_str, is_admin)
+    return jsonify(recipes), 200
 
 @recipes_bp.get("/<int:recipe_id>")
 @require_authorization
@@ -82,25 +79,13 @@ def get_recipe(recipe_id, **kwargs):
       404:
         description: Recipe not found
     """
-    from .common import get_db, row_to_dict
+    user_id_str = kwargs.get("current_user_id")
+    is_admin = kwargs.get("is_admin")
 
-    # Extract from kwargs
-    user_id_str = kwargs.get('current_user_id')
-    is_admin = kwargs.get('is_admin')
-    # current_user = kwargs.get('current_user')
-    if is_admin:
-        row = get_db().execute(
-            "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
-        ).fetchone()
-    else:
-        # Non-admin users can only access their own recipes or public recipes
-        row = get_db().execute(
-            "SELECT * FROM recipes WHERE id = ? AND (user_id = ? OR is_public = 1)",
-            (recipe_id, user_id_str)
-        ).fetchone()
-    if row is None:
+    recipe = get_recipe_for_user(recipe_id, user_id_str, is_admin)
+    if recipe is None:
         return jsonify({"error": "recipe not found"}), 404
-    return jsonify(row_to_dict(row)), 200
+    return jsonify(recipe), 200
 
 @recipes_bp.post("/")
 @require_authorization
@@ -139,36 +124,16 @@ def create_recipe(**kwargs):
       409:
         description: A recipe with the same title already exists
     """
-    from .common import get_db, row_to_dict
-
-    # Extract from kwargs
-    user_id_str = kwargs.get('current_user_id')
-    # is_admin = kwargs.get('is_admin')
-    # current_user = kwargs.get('current_user')
-    # get data from request body - silent=True returns None if data not found instead of raising an error
+    user_id_str = kwargs.get("current_user_id")
     data = request.get_json(silent=True)
+
     if not data or not data.get("title") or not data.get("ingredients"):
         return jsonify({"error": "title and ingredients are required"}), 400
-    db = get_db()
-    try:
-        cur = db.execute(
-            "INSERT INTO recipes (user_id, title, ingredients, instructions, is_public)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (
-                user_id_str,
-                data["title"],
-                data["ingredients"],
-                data.get("instructions", ""),
-                1 if data.get("is_public", True) else 0,
-            ),
-        )
-        db.commit()
-    except sqlite3.IntegrityError:
-        return jsonify({"error": "a recipe with that title already exists"}), 409
-    row = db.execute(
-        "SELECT * FROM recipes WHERE id = ?", (cur.lastrowid,)
-    ).fetchone()
-    return jsonify(row_to_dict(row)), 201
+
+    recipe, error = create_recipe_for_user(user_id_str, data)
+    if error:
+        return jsonify({"error": error}), 409
+    return jsonify(recipe), 201
 
 @recipes_bp.patch("/<int:recipe_id>")
 @require_authorization
@@ -213,48 +178,25 @@ def update_recipe(recipe_id, **kwargs):
       409:
         description: A recipe with the same title already exists
     """
-    from .common import get_db, row_to_dict
+    user_id_str = kwargs.get("current_user_id")
+    is_admin = kwargs.get("is_admin")
 
-    # Extract from kwargs
-    user_id_str = kwargs.get('current_user_id')
-    is_admin = kwargs.get('is_admin')
-    # current_user = kwargs.get('current_user')
-    # get data from request body - silent=True returns None if data not found instead of raising an error
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "a JSON body is required"}), 400
-    db = get_db()
-    # check ownership for update operation - only the owner or an admin can update a recipe
-    check_recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (recipe_id,)).fetchone()
-    if not check_recipe:
+
+    recipe, error = update_recipe_for_user(recipe_id, user_id_str, is_admin, data)
+
+    if error == "recipe_not_found":
         return jsonify({"error": "recipe not found"}), 404
-    if str(check_recipe["user_id"]) != user_id_str and is_admin is not True:
+    if error == "access_denied":
         return jsonify({"error": "access denied"}), 403
-    # authenticated and authorized to update the recipe
-    fields, values = [], []
-    for column in ("title", "ingredients", "instructions"):
-        if column in data:
-            fields.append(f"{column} = ?")
-            values.append(data[column])
-    if "is_public" in data:
-        fields.append("is_public = ?")
-        values.append(1 if data["is_public"] else 0)
-    if not fields:
+    if error == "nothing_to_update":
         return jsonify({"error": "nothing to update"}), 400
-    values.append(recipe_id)
-    try:
-        cur = db.execute(
-            f"UPDATE recipes SET {', '.join(fields)} WHERE id = ?", values
-        )
-        db.commit()
-    except sqlite3.IntegrityError:
+    if error == "duplicate_title":
         return jsonify({"error": "a recipe with that title already exists"}), 409
-    if cur.rowcount == 0:
-        return jsonify({"error": "recipe not found"}), 404
-    row = db.execute(
-        "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
-    ).fetchone()
-    return jsonify(row_to_dict(row)), 200
+
+    return jsonify(recipe), 200
 
 @recipes_bp.delete("/<int:recipe_id>")
 @require_authorization
@@ -281,22 +223,14 @@ def delete_recipe(recipe_id, **kwargs):
       404:
         description: Recipe not found
     """
-    from .common import get_db
+    user_id_str = kwargs.get("current_user_id")
+    is_admin = kwargs.get("is_admin")
 
-    # Extract from kwargs
-    user_id_str = kwargs.get('current_user_id')
-    is_admin = kwargs.get('is_admin')
-    # current_user = kwargs.get('current_user')
-    db = get_db()
-    # check ownership for delete operation - only the owner or an admin can delete a recipe
-    check_recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (recipe_id,)).fetchone()
-    if not check_recipe:
+    error = delete_recipe_for_user(recipe_id, user_id_str, is_admin)
+
+    if error == "recipe_not_found":
         return jsonify({"error": "recipe not found"}), 404
-    if str(check_recipe["user_id"]) != user_id_str and is_admin is not True:
+    if error == "access_denied":
         return jsonify({"error": "access denied"}), 403
-    # authenticated and authorized to delete the recipe
-    cur = db.execute("DELETE FROM recipes WHERE id = ?", (recipe_id,))
-    db.commit()
-    if cur.rowcount == 0:
-        return jsonify({"error": "recipe not found"}), 404
+
     return "", 204

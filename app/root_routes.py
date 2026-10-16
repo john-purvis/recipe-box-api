@@ -1,14 +1,15 @@
 
+# app/root_routes.py
 from flask import Blueprint, jsonify, request, send_from_directory
 
-from .common import require_authorization
+from .middleware import require_authorization
 
 root_bp = Blueprint("root", __name__)
 
 @root_bp.get("/")
 def home():
     """
-    Serve the homepage of the Recipe Box API..
+    Serve the homepage of the Recipe Box API.
     ---
     tags:
     - Home
@@ -75,7 +76,7 @@ def healthcheck():
               type: string
             example: "<html><body><span>Recipe Box API Health: EXCEPTION</span></body></html>"
     """
-    from .common import get_db
+    from .middleware import get_db
     # Get parameter: provide a default value and cast the data type
     return_type = request.args.get('type', default="html", type=str)
     try:

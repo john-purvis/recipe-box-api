@@ -1,5 +1,3 @@
-import sqlite3
-
 from flasgger import Swagger
 from flask import Flask, g
 from flask_jwt_extended import (
@@ -22,11 +20,14 @@ def create_app(config_name="development"):
   }
   app.config.from_object(config_classes[config_name])
 
+  from .db import init_db
+  init_db(app)
+
   # Fetch variables from environment fallback to strings if missing
   JSON_SORT_KEYS = app.config["JSON_SORT_KEYS"]
-  PYTHON_DEBUG   = app.config["PYTHON_DEBUG"]
-  FLASK_DEBUG    = app.config["FLASK_DEBUG"]
-  DATABASE       = app.config["DATABASE"]
+  PYTHON_DEBUG   = app.config["PYTHON_DEBUG"]  # noqa: F841
+  FLASK_DEBUG    = app.config["FLASK_DEBUG"]  # noqa: F841
+  DATABASE       = app.config["DATABASE"]  # noqa: F841
 
   app.json.sort_keys = JSON_SORT_KEYS
 
@@ -56,8 +57,8 @@ def create_app(config_name="development"):
       }
   }
 
-  swagger = Swagger(app, template=swagger_data)
-  jwt_manager = JWTManager(app)
+  swagger = Swagger(app, template=swagger_data)  # noqa: F841
+  jwt_manager = JWTManager(app)  # noqa: F841
 
   @app.teardown_appcontext
   def close_db(exception):

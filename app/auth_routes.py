@@ -1,10 +1,11 @@
+# app/auth_routes.py
 import sqlite3
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import create_access_token
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from .common import require_authorization
+from .middleware import require_authorization
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -34,7 +35,7 @@ def login():
       401:
         description: Invalid username or password
     """
-    from .common import get_db
+    from .db import get_db
 
     auth_data = request.get_json()
     if not auth_data or 'username' not in auth_data or 'password' not in auth_data:
@@ -89,7 +90,7 @@ def create_user():
       409:
         description: Username already taken
     """
-    from .common import get_db
+    from db import get_db
 
     data = request.get_json(silent=True) or {}
     username, password, email, phone = data.get("username"), data.get("password"), data.get("email"), data.get("phone")
@@ -165,7 +166,7 @@ def list_users(**kwargs):
                 is_admin:
                   type: boolean
     """
-    from .common import get_db, row_to_dict
+    from .db import get_db, row_to_dict
 
     # Extract from kwargs
     user_id_str = kwargs.get('current_user_id')
@@ -233,7 +234,7 @@ def update_user(user_id, **kwargs):
       409:
         description: A user with that email or phone number already exists
     """
-    from .common import get_db, row_to_dict
+    from .db import get_db, row_to_dict
 
     # Extract from kwargs
     user_id_str = kwargs.get('current_user_id')
@@ -307,7 +308,7 @@ def delete_user(user_id, **kwargs):
       404:
         description: User not found
     """
-    from .common import get_db
+    from .db import get_db
 
     # Extract from kwargs
     # user_id_str = kwargs.get('current_user_id')

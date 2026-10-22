@@ -1,8 +1,9 @@
 # app/recipe_routes.py
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 
-from .middleware import require_authorization
-from .services.recipe_service import (
+from app.extensions import cache
+from app.middleware import require_authorization
+from app.services.recipe_service import (
     create_recipe_for_user,
     delete_recipe_for_user,
     get_recipe_for_user,
@@ -13,7 +14,7 @@ from .services.recipe_service import (
 recipes_bp = Blueprint("recipes", __name__)
 
 @recipes_bp.get("/")
-@require_authorization
+@cache.memoize(timeout=30)
 def list_recipes(**kwargs):
     """
     List all recipes.
@@ -49,6 +50,8 @@ def list_recipes(**kwargs):
       403:
         description: Access denied (not logged in)
     """
+    if current_app.debug:
+        print("DEBUG: HITTING DB FOR /recipes")
     user_id_str = kwargs.get("current_user_id")
     is_admin = kwargs.get("is_admin")
     recipes = list_recipes_for_user(user_id_str, is_admin)
@@ -102,16 +105,16 @@ def create_recipe(**kwargs):
         in: body
         required: true
         schema:
-        type: object
-        properties:
-          title:
-            type: string
-          ingredients:
-            type: string
-          instructions:
-            type: string
-          is_public:
-            type: boolean
+          type: object
+          properties:
+            title:
+              type: string
+            ingredients:
+              type: string
+            instructions:
+              type: string
+            is_public:
+              type: boolean
     responses:
       201:
         description: Recipe created successfully
@@ -133,6 +136,11 @@ def create_recipe(**kwargs):
     recipe, error = create_recipe_for_user(user_id_str, data)
     if error:
         return jsonify({"error": error}), 409
+
+    # if the create_recipe succeeds then delete cached entry for the list_recipes route
+    if current_app.debug:
+        print("DEBUG: deleting cache for list_recipes")
+    cache.delete_memoized(list_recipes)
     return jsonify(recipe), 201
 
 @recipes_bp.patch("/<int:recipe_id>")
@@ -196,6 +204,9 @@ def update_recipe(recipe_id, **kwargs):
     if error == "duplicate_title":
         return jsonify({"error": "a recipe with that title already exists"}), 409
 
+    # if the update_recipe succeeds then delete cached entry for the list_recipes route
+    if current_app.debug:
+        print("DEBUG: deleting cache for list_recipes")
     return jsonify(recipe), 200
 
 @recipes_bp.delete("/<int:recipe_id>")
@@ -233,4 +244,7 @@ def delete_recipe(recipe_id, **kwargs):
     if error == "access_denied":
         return jsonify({"error": "access denied"}), 403
 
+    # if the delete_recipe succeeds then delete cached entry for the list_recipes route
+    if current_app.debug:
+        print("DEBUG: deleting cache for list_recipes")
     return "", 204

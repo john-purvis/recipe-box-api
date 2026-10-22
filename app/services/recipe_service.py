@@ -1,134 +1,139 @@
 # app/services/recipe_service.py
-import sqlite3
 
-from ..db import get_db, row_to_dict
+from flask import current_app
+from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
+
+from app.db import recipe_to_dict
+from app.extensions import dba
+from app.models.recipes import Recipe
 
 
 def list_recipes_for_user(user_id, is_admin):
-    db = get_db()
     if is_admin:
-        rows = db.execute(
-            "SELECT * FROM recipes ORDER BY id"
-        ).fetchall()
+        recipes = (
+            Recipe.query
+            .order_by(Recipe.id)
+            .all()
+        )
+        return [recipe_to_dict(r) for r in recipes]
     else:
-        rows = db.execute(
-            """
-            SELECT * FROM recipes
-            WHERE (user_id = ? OR is_public = 1)
-            ORDER BY id
-            """,
-            (user_id,)
-        ).fetchall()
-    return [row_to_dict(r) for r in rows]
+        recipes = (
+            Recipe.query
+            .filter(
+                (Recipe.user_id == user_id) | (Recipe.is_public == 1)
+            )
+            .order_by(Recipe.id)
+            .all()
+        )
+        return [recipe_to_dict(r) for r in recipes]
 
 def get_recipe_for_user(recipe_id, user_id, is_admin):
-    db = get_db()
     if is_admin:
-        row = db.execute(
-            "SELECT * FROM recipes WHERE id = ?",
-            (recipe_id,)
-        ).fetchone()
+        recipe = (
+            Recipe.query
+            .filter(
+                Recipe.id == recipe_id
+            )
+            .first()
+        )
+        return recipe_to_dict(recipe)
     else:
-        row = db.execute(
-            """
-            SELECT * FROM recipes
-            WHERE id = ?
-              AND (user_id = ? OR is_public = 1)
-            """,
-            (recipe_id, user_id)
-        ).fetchone()
-    return row_to_dict(row) if row else None
+        recipe = (
+            Recipe.query
+            .filter(
+                Recipe.id == recipe_id,
+                or_(Recipe.user_id == user_id, Recipe.is_public == 1),
+            )
+            .first()
+        )
+    return recipe_to_dict(recipe)
 
 def create_recipe_for_user(user_id, data):
-    db = get_db()
+    recipe = Recipe(
+        user_id=user_id,
+        title=data["title"],
+        ingredients=data["ingredients"],
+        instructions=data.get("instructions", ""),
+        is_public=data.get("is_public", True),
+    )
+    dba.session.add(recipe)
+
     try:
-        cur = db.execute(
-            """
-            INSERT INTO recipes (user_id, title, ingredients, instructions, is_public)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                user_id,
-                data["title"],
-                data["ingredients"],
-                data.get("instructions", ""),
-                1 if data.get("is_public", True) else 0,
-            ),
-        )
-        db.commit()
-    except sqlite3.IntegrityError:
+        dba.session.commit()
+    except IntegrityError:
+        dba.session.rollback()
         return None, "a recipe with that title already exists"
 
-    row = db.execute(
-        "SELECT * FROM recipes WHERE id = ?",
-        (cur.lastrowid,)
-    ).fetchone()
-    return row_to_dict(row), None
+    # At this point `recipe.id` is populated and the row is in the DB.
+    if current_app.debug:
+        print("DEBUG: recipe saved")
+    return recipe_to_dict(recipe), None
 
 def update_recipe_for_user(recipe_id, user_id, is_admin, data):
-    db = get_db()
+    # Fetch recipe
+    recipe = (
+        Recipe.query
+        .filter(
+            Recipe.id == recipe_id
+        )
+        .first()
+    )
 
-    check_recipe = db.execute(
-        "SELECT * FROM recipes WHERE id = ?",
-        (recipe_id,)
-    ).fetchone()
-    if not check_recipe:
+    # Check existence first
+    if not recipe:
         return None, "recipe_not_found"
 
-    if str(check_recipe["user_id"]) != str(user_id) and not is_admin:
+    # Check ownership using user_id
+    # if str(recipe.user_id) != str(user_id) and not is_admin:
+    #     return None, "access_denied"
+
+    # Check ownership using foreign key relationship
+    if str(recipe.user.id) != str(user_id) and not is_admin:
         return None, "access_denied"
 
-    fields, values = [], []
-    for column in ("title", "ingredients", "instructions"):
-        if column in data:
-            fields.append(f"{column} = ?")
-            values.append(data[column])
+    # Update the recipe
+    if "title" in data:
+        recipe.title = data["title"]
+    if "ingredients" in data:
+        recipe.ingredients = data["ingredients"]
+    if "instructions" in data:
+        recipe.instructions = data["instructions"]
     if "is_public" in data:
-        fields.append("is_public = ?")
-        values.append(1 if data["is_public"] else 0)
+        recipe.is_public = 1 if data["is_public"] else 0
 
-    if not fields:
-        return None, "nothing_to_update"
-
-    values.append(recipe_id)
     try:
-        cur = db.execute(
-            f"UPDATE recipes SET {', '.join(fields)} WHERE id = ?",
-            values,
-        )
-        db.commit()
-    except sqlite3.IntegrityError:
-        return None, "duplicate_title"
+        # commit changes
+        dba.session.commit()
+    except IntegrityError:
+        # rollback on error
+        dba.session.rollback()
+        return None, "a recipe with that title already exists"
 
-    if cur.rowcount == 0:
-        return None, "recipe_not_found"
-
-    row = db.execute(
-        "SELECT * FROM recipes WHERE id = ?",
-        (recipe_id,)
-    ).fetchone()
-    return row_to_dict(row), None
+    return recipe_to_dict(recipe), None
 
 def delete_recipe_for_user(recipe_id, user_id, is_admin):
-    db = get_db()
-
-    check_recipe = db.execute(
-        "SELECT * FROM recipes WHERE id = ?",
-        (recipe_id,)
-    ).fetchone()
-    if not check_recipe:
-        return "recipe_not_found"
-
-    if str(check_recipe["user_id"]) != str(user_id) and not is_admin:
-        return "access_denied"
-
-    cur = db.execute(
-        "DELETE FROM recipes WHERE id = ?",
-        (recipe_id,)
+    recipe = (
+        Recipe.query
+        .filter(
+            Recipe.id == recipe_id
+        )
+        .first()
     )
-    db.commit()
-
-    if cur.rowcount == 0:
+    if not recipe:
         return "recipe_not_found"
+
+    # Check ownership using user_id
+    # if str(recipe.user_id) != str(user_id) and not is_admin:
+    #     return "access_denied"
+
+    # Check ownership using foreign key relationship
+    if str(recipe.user.id) != str(user_id) and not is_admin:
+        return None, "access_denied"
+
+    dba.session.delete(recipe)
+
+    # commit changes
+    dba.session.commit()
 
     return None  # success

@@ -2,7 +2,7 @@
 # app/root_routes.py
 from flask import Blueprint, jsonify, request, send_from_directory
 
-from .middleware import require_authorization
+from app.middleware import require_authorization
 
 root_bp = Blueprint("root", __name__)
 
@@ -76,7 +76,7 @@ def healthcheck():
               type: string
             example: "<html><body><span>Recipe Box API Health: EXCEPTION</span></body></html>"
     """
-    from .middleware import get_db
+    from app.middleware import get_db
     # Get parameter: provide a default value and cast the data type
     return_type = request.args.get('type', default="html", type=str)
     try:

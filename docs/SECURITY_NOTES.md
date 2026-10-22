@@ -25,3 +25,5 @@ Ownership authorization
 •	Owner (Alice) can read and update her own recipe (200 OK, state changes).
 •	Non-owner (Bob) gets 403 FORBIDDEN "access denied" on PATCH and DELETE.
 •	Conclusion: Ownership checks work for both modification and deletion; no cross-user exploit.
+
+see also CACHING_NOTES.md

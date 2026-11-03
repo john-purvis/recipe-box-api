@@ -3,7 +3,7 @@ import sqlite3
 
 from flask import current_app, g
 
-from app.models.recipes import Recipe, User
+from app.models.recipes import Rating, Recipe, User
 
 
 def user_to_dict(user: User):
@@ -30,6 +30,18 @@ def recipe_to_dict(recipe: Recipe):
         "ingredients": recipe.ingredients,
         "instructions": recipe.instructions,
         "is_public": recipe.is_public,
+    }
+
+def rating_to_dict(rating: Rating):
+    if not rating:
+        return None
+
+    return {
+        "id": rating.id,
+        "user_id": rating.user_id,
+        "recipe_id": rating.recipe_id,
+        "score": rating.score,
+        "comment": rating.comment,
     }
 
 def row_to_dict(row):

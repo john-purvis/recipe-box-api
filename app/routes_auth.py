@@ -1,10 +1,8 @@
 # app/auth_routes.py
-import sqlite3
-
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import create_access_token
-from werkzeug.security import generate_password_hash
 
+from app.extensions import limiter
 from app.middleware import require_authorization
 from app.services.auth_service import (
     authenticate_user,
@@ -17,6 +15,7 @@ from app.services.auth_service import (
 auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.post("/login")
+@limiter.limit("3 per minute")
 def login():
     """
     User login endpoint that authenticates a user and returns a JWT token.
@@ -64,6 +63,7 @@ def login():
     return jsonify({'message': 'Invalid username or password'}), 401
 
 @auth_bp.post("/register")
+@limiter.limit("5 per minute")
 def create_user():
     """
     User registration endpoint that creates a new user in the database.
@@ -250,7 +250,6 @@ def update_user(user_id, **kwargs):
         return jsonify({"error": "a user with that phone number already exists"}), 409
 
     return jsonify(user), 200
-
 
 @auth_bp.delete('/users/<int:user_id>')
 @require_authorization

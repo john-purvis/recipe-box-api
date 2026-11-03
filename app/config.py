@@ -22,7 +22,7 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CACHE_TYPE = os.environ.get("DEV_CACHE_TYPE")
     CACHE_DEFAULT_TIMEOUT = os.environ.get("DEV_CACHE_DEFAULT_TIMEOUT")
-
+    NUTRITION_SERVICE_BASE_URL = os.environ.get("DEV_NUTRITION_SERVICE_BASE_URL")
 class TestingConfig(Config):
     DEBUG = os.environ.get("TST__DEBUG") == "True"
     db_name = os.environ.get("TST_DATABASE")
@@ -35,7 +35,7 @@ class TestingConfig(Config):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CACHE_TYPE = os.environ.get("TST_CACHE_TYPE")
     CACHE_DEFAULT_TIMEOUT = os.environ.get("TST_CACHE_DEFAULT_TIMEOUT")
-
+    NUTRITION_SERVICE_BASE_URL = os.environ.get("TST_NUTRITION_SERVICE_BASE_URL")
 class ProductionConfig(Config):
     DEBUG = os.environ.get("PRD_DEBUG") == "True"
     db_name = os.environ.get("PRD_DATABASE")
@@ -48,3 +48,4 @@ class ProductionConfig(Config):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CACHE_TYPE = os.environ.get("PRD_CACHE_TYPE")
     CACHE_DEFAULT_TIMEOUT = os.environ.get("PRD_CACHE_DEFAULT_TIMEOUT")
+    NUTRITION_SERVICE_BASE_URL = os.environ.get("PRD_NUTRITION_SERVICE_BASE_URL")

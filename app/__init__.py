@@ -1,20 +1,19 @@
 # app/__init__.py
 from flasgger import Swagger
-from flask import Flask, g
+from flask import Flask, g, jsonify
 from flask_jwt_extended import (
   JWTManager,
 )
 
-from app.auth_routes import auth_bp
 from app.config import DevelopmentConfig, ProductionConfig, TestingConfig
-from app.recipe_routes import recipes_bp
-from app.root_routes import root_bp
+from app.routes_auth import auth_bp
+from app.routes_recipe import recipes_bp
+from app.routes_root import root_bp
 from app.utils import clear_console
 
+clear_console()
 
 def create_app(config_name="development"):
-
-  # clear_console()
   print("Application starting...")
   app = Flask(__name__)
 
@@ -26,28 +25,30 @@ def create_app(config_name="development"):
   app.config.from_object(config_classes[config_name])
 
   # Fetch variables from environment
-  DEBUG                   = app.config["DEBUG"]
-  JSON_SORT_KEYS          = app.config["JSON_SORT_KEYS"]
-  BASE_DIR                = app.config["BASE_DIR"]
-  DATABASE                = app.config["DATABASE"]
-  SQLALCHEMY_DATABASE_URI = app.config["SQLALCHEMY_DATABASE_URI"]
-  CACHE_TYPE              = app.config["CACHE_TYPE"]
-  CACHE_DEFAULT_TIMEOUT   = app.config["CACHE_DEFAULT_TIMEOUT"]
+  DEBUG                      = app.config["DEBUG"]
+  JSON_SORT_KEYS             = app.config["JSON_SORT_KEYS"]
+  BASE_DIR                   = app.config["BASE_DIR"]
+  DATABASE                   = app.config["DATABASE"]
+  SQLALCHEMY_DATABASE_URI    = app.config["SQLALCHEMY_DATABASE_URI"]
+  CACHE_TYPE                 = app.config["CACHE_TYPE"]
+  CACHE_DEFAULT_TIMEOUT      = app.config["CACHE_DEFAULT_TIMEOUT"]
+  NUTRITION_SERVICE_BASE_URL = app.config["NUTRITION_SERVICE_BASE_URL"]
 
-#   app.json.sort_keys = JSON_SORT_KEYS
+  app.json.sort_keys = JSON_SORT_KEYS
   app.json.sort_keys = False
 
-  print(f"Environment                 = {config_name}")
-  print(f"    DEBUG                   = {DEBUG}")
-  print(f"    BASE_DIR                = {BASE_DIR}")
-  print(f"    JSON_SORT_KEYS          = {JSON_SORT_KEYS}")
-  print(f"    DATABASE                = {DATABASE}")
-  print(f"    SQLALCHEMY_DATABASE_URI = {SQLALCHEMY_DATABASE_URI}")
-  print(f"    CACHE_TYPE              = {CACHE_TYPE}")
-  print(f"    CACHE_DEFAULT_TIMEOUT   = {CACHE_DEFAULT_TIMEOUT}")
+  print(f"Environment                      = {config_name}")
+  print(f"    DEBUG                        = {DEBUG}")
+  print(f"    BASE_DIR                     = {BASE_DIR}")
+  print(f"    JSON_SORT_KEYS               = {JSON_SORT_KEYS}")
+  print(f"    DATABASE                     = {DATABASE}")
+  print(f"    SQLALCHEMY_DATABASE_URI      = {SQLALCHEMY_DATABASE_URI}")
+  print(f"    CACHE_TYPE                   = {CACHE_TYPE}")
+  print(f"    CACHE_DEFAULT_TIMEOUT        = {CACHE_DEFAULT_TIMEOUT}")
+  print(f"    NUTRITION_SERVICE_BASE_URL   = {NUTRITION_SERVICE_BASE_URL}")
 
   # init SQLAlchemy, migarations, and cache
-  from app.extensions import cache, dba, migrate
+  from app.extensions import cache, dba, limiter, migrate
   from app.models.recipes import Recipe, User
   print("Initializing SQLAchemy...")
   dba.init_app(app)
@@ -55,6 +56,8 @@ def create_app(config_name="development"):
   migrate.init_app(app, dba)
   print("    enabling caching...")
   cache.init_app(app)
+  print("    enabling limiter...")
+  limiter.init_app(app)
 
   # No longer needed with the introduction of migrations
   # init our sqlite db (if none exists)
@@ -91,8 +94,16 @@ def create_app(config_name="development"):
   print("Initializing JWT Manager...")
   jwt_manager = JWTManager(app)  # noqa: F841
 
+  # Custom error handler for when a user exceeds their limit
+  @app.errorhandler(429)
+  def ratelimit_handler(e: Exception):
+    return jsonify({
+        "error": "Rate limit exceeded",
+        "description": str(e.description)
+    }), 429
+
   @app.teardown_appcontext
-  def close_db(exception):
+  def close_db(exception: Exception):
       db = g.pop("db", None)
       if db is not None:
           db.close()

@@ -191,3 +191,156 @@ Connection: close
 
 
 
+================================================================================
+================================================================================
+================================================================================
+INTERNAL SERVICE TOKEN TESTS (NO JWT TOKEN)
+
+1.	No headers at all
+$ curl -i -X GET "http://localhost:5002/recipes/"
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.9 Python/3.14.8
+Date: Thu, 05 Nov 2026 02:49:35 GMT
+Content-Type: application/json
+Content-Length: 40
+Connection: close
+
+{
+  "error": "missing_internal_token"
+}
+
+2.	Wrong internal token
+$ curl -i -X GET "http://localhost:5002/recipes/" -H "accept: application/json" -H "X-Internal-Token: XSWT-badtoken"
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.9 Python/3.14.8
+Date: Thu, 05 Nov 2026 02:50:49 GMT
+Content-Type: application/json
+Content-Length: 40
+Connection: close
+
+{
+  "error": "invalid_internal_token"
+}
+
+3. Correct internal token, no JWT yet
+$ curl -i -X GET "http://localhost:5002/recipes/" -H "accept: application/json" -H "X-Internal-Token: XSWT-sdfgkfdsosiojnovnonqklpsdfsdfgnjsdfbknfvbvklcfdfg"
+HTTP/1.1 200 OK
+Server: Werkzeug/3.1.9 Python/3.14.8
+Date: Thu, 05 Nov 2026 02:47:52 GMT
+Content-Type: application/json
+Content-Length: 945
+Connection: close
+
+[
+  {
+    "id": 1,
+    "user_id": 3,
+    "title": "Shakshuka",
+    "ingredients": "eggs, tomatoes, peppers, onion, cumin, paprika",
+    "instructions": "Simmer the sauce, crack in the eggs, cover until just set.",
+    "is_public": 1
+  },
+  {
+    "id": 2,
+    "user_id": 1,
+    "title": "Overnight oats",
+    "ingredients": "rolled oats, milk, yogurt, chia seeds, honey",
+    "instructions": "Stir everything together and refrigerate overnight.",
+    "is_public": 1
+  },
+  {
+    "id": 4,
+    "user_id": 2,
+    "title": "Alice's Homestyle Fried Chicken",
+    "ingredients": "Chicken and stuff",
+    "instructions": "Put other stuff on chicken and cook it.",
+    "is_public": 1
+  },
+  {
+    "id": 5,
+    "user_id": 2,
+    "title": "Grilled Cheese",
+    "ingredients": "bread, cheese, butter",
+    "instructions": "Place cheese inside two slices of bread and using butter, grill until cheese is melted and bread is brown.",
+    "is_public": 1
+  }
+]
+
+
+================================================================================
+================================================================================
+================================================================================
+INTERNAL SERVICE TOKEN TESTS (JWT TOKEN TESTS)
+
+1. No Authorization, valid internal token
+$ curl -i -X GET "http://localhost:5002/recipes/" -H "accept: application/json" -H "X-Internal-Token: XSWT-sdfgkfdsosiojnovnonqklpsdfsdfgnjsdfbknfvbvklcfdfg"
+
+2. Bad JWT, valid internal token
+$ curl -i -X GET "http://localhost:5002/recipes/" -H "accept: application/json" -H "X-Internal-Token: XSWT-sdfgkfdsosiojnovnonqklpsdfsdfgnjsdfbknfvbvklcfdfg" -H "Authorization: Bearer BADJWT"
+HTTP/1.1 422 UNPROCESSABLE ENTITY
+Server: Werkzeug/3.1.9 Python/3.14.8
+Date: Thu, 05 Nov 2026 03:06:35 GMT
+Content-Type: application/json
+Content-Length: 35
+Connection: close
+
+{
+  "msg": "Not enough segments"
+}
+
+$ curl -i -X GET "http://localhost:5002/recipes/" -H "accept: application/json" -H "X-Internal-Token: XSWT-sdfgkfdsosiojnovnonqklpsdfsdfgnjsdfbknfvbvklcfdfg" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc5Mzg0NzY0MiwianRpIjoiNzdiNGUxMWYtYTYwZC00MTY2LTk3N2YtMzA1NjUwM2EwMmY1IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjIiLCJuYmYiOjE3OTM4NDc2NDIsImNzcmYiOiJlNDEzZDJiYS1hNDk1LTQ4NDYtODBmYi0xNWFmODVhODZhODYiLCJleHAiOjE3OTM4NDg1NDIsImlzX2FkbWluIjpmYWxzZX0.u9_1yU5HlMpFS_VJEJpqgE8LNuO-jcCvelDIIj_lI17"
+HTTP/1.1 422 UNPROCESSABLE ENTITY
+Server: Werkzeug/3.1.9 Python/3.14.8
+Date: Thu, 05 Nov 2026 03:07:22 GMT
+Content-Type: application/json
+Content-Length: 38
+Connection: close
+
+{
+  "msg": "Invalid crypto padding"
+}
+
+
+3. Valid JWT, valid internal token (success)
+$ curl -i -X GET "http://localhost:5002/recipes/" -H "accept: application/json" -H "X-Internal-Token: XSWT-sdfgkfdsosiojnovnonqklpsdfsdfgnjsdfbknfvbvklcfdfg" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc5Mzg0NzY0MiwianRpIjoiNzdiNGUxMWYtYTYwZC00MTY2LTk3N2YtMzA1NjUwM2EwMmY1IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjIiLCJuYmYiOjE3OTM4NDc2NDIsImNzcmYiOiJlNDEzZDJiYS1hNDk1LTQ4NDYtODBmYi0xNWFmODVhODZhODYiLCJleHAiOjE3OTM4NDg1NDIsImlzX2FkbWluIjpmYWxzZX0.u9_1yU5HlMpFS_VJEJpqgE8LNuO-jcCvelDIIj_lI10"
+HTTP/1.1 200 OK
+Server: Werkzeug/3.1.9 Python/3.14.8
+Date: Thu, 05 Nov 2026 03:01:19 GMT
+Content-Type: application/json
+Content-Length: 945
+Connection: close
+
+[
+  {
+    "id": 1,
+    "user_id": 3,
+    "title": "Shakshuka",
+    "ingredients": "eggs, tomatoes, peppers, onion, cumin, paprika",
+    "instructions": "Simmer the sauce, crack in the eggs, cover until just set.",
+    "is_public": 1
+  },
+  {
+    "id": 2,
+    "user_id": 1,
+    "title": "Overnight oats",
+    "ingredients": "rolled oats, milk, yogurt, chia seeds, honey",
+    "instructions": "Stir everything together and refrigerate overnight.",
+    "is_public": 1
+  },
+  {
+    "id": 4,
+    "user_id": 2,
+    "title": "Alice's Homestyle Fried Chicken",
+    "ingredients": "Chicken and stuff",
+    "instructions": "Put other stuff on chicken and cook it.",
+    "is_public": 1
+  },
+  {
+    "id": 5,
+    "user_id": 2,
+    "title": "Grilled Cheese",
+    "ingredients": "bread, cheese, butter",
+    "instructions": "Place cheese inside two slices of bread and using butter, grill until cheese is melted and bread is brown.",
+    "is_public": 1
+  }
+]

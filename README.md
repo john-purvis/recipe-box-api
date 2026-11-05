@@ -221,3 +221,19 @@ https://www.postman.com/
   that should point to the correct environment location.
 * Use `pip install -r requirements.txt` if the libraries need to be installed
   once the correct virtual environment is set.
+
+## Migrations
+1. run ".venv\Scripts\Activate.ps1"
+2. run from project root "recipe-box-api" for app or users repectively
+
+   alembic -c migrations/alembic.ini revision --autogenerate -m "users baseline"
+   alembic -c migrations/alembic.ini revision --autogenerate -m "<comment>"
+   alembic -c migrations/alembic.ini upgrade head
+
+   alembic -c migrations_users/alembic.ini revision --autogenerate -m "users baseline"
+   alembic -c migrations_users/alembic.ini revision --autogenerate -m "<comment>"
+   alembic -c migrations_users/alembic.ini upgrade head
+
+   alembic -c migrations_recipes/alembic.ini revision --autogenerate -m "recipes baseline"
+   alembic -c migrations_recipes/alembic.ini revision --autogenerate -m "<comment>"
+   alembic -c migrations_recipes/alembic.ini upgrade head

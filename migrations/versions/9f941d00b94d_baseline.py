@@ -1,7 +1,7 @@
 """baseline
 
 Revision ID: 9f941d00b94d
-Revises: 
+Revises:
 Create Date: 2026-10-21 12:56:58.415933
 
 """
@@ -25,10 +25,10 @@ def upgrade():
     sa.Column('phone', sa.Text(), nullable=False),
     sa.Column('password_hash', sa.Text(), server_default='', nullable=False),
     sa.Column('is_admin', sa.Integer(), server_default='0', nullable=False),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email'),
-    sa.UniqueConstraint('phone'),
-    sa.UniqueConstraint('username')
+    sa.PrimaryKeyConstraint('id', name='pk_users'),
+    sa.UniqueConstraint('email', name='uq_users_email'),
+    sa.UniqueConstraint('phone', name='uq_users_phone'),
+    sa.UniqueConstraint('username', name='uq_users_username')
     )
     op.create_table('recipes',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -37,9 +37,9 @@ def upgrade():
     sa.Column('ingredients', sa.Text(), nullable=False),
     sa.Column('instructions', sa.Text(), server_default='', nullable=False),
     sa.Column('is_public', sa.Integer(), server_default='1', nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('title')
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], name='fk_recipes_user_id_users'),
+    sa.PrimaryKeyConstraint('id', name='pk_recipes'),
+    sa.UniqueConstraint('title', name='uq_recipes_title')
     )
     # ### end Alembic commands ###
 

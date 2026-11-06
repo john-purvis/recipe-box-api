@@ -21,3 +21,9 @@ __pycache__/
 
 # Personal Project Notes
 SCRATCH_PAD.md
+
+# Backup files
+*.rar
+
+# Anything marked "old"
+*.old

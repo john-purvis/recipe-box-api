@@ -6,12 +6,12 @@ from flask_jwt_extended import (
 )
 
 from users.config import DevelopmentConfig, ProductionConfig, TestingConfig
-from users.routes_auth import auth_bp
 from users.routes_root import root_bp
+from users.routes_users import users_bp
 
 
 def create_app(config_name="development"):
-    print("User application starting...")
+    print("Recipe User API starting...")
     user_app = Flask(__name__)
 
     config_classes = {
@@ -71,7 +71,7 @@ def create_app(config_name="development"):
 
     print("Registering Blueprints...")
     user_app.register_blueprint(root_bp)
-    user_app.register_blueprint(auth_bp, url_prefix="/auth")
+    user_app.register_blueprint(users_bp)
 
     # The securityDefinition below is used by Swagger to describe the
     # authentication mechanism for the API.
@@ -89,6 +89,12 @@ def create_app(config_name="development"):
                 "name": "Authorization",
                 "in": "header",
                 "description": "Enter your JWT token with the 'Bearer' prefix. Example: 'Bearer eyJhbGciOi...'"
+            },
+            "InternalTokenAuth": {
+                "type": "apiKey",
+                "name": "X-Internal-Token",
+                "in": "header",
+                "description": "Enter your internal security token. Example: 'XSWT-sdfgkfd...'"
             }
         }
     }

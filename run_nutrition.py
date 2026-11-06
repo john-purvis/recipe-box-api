@@ -1,6 +1,6 @@
-# run_app.py
+# run_nutrition.py
 """
-Recipe Box - Recipes API.
+Recipe Box - Nutrition API.
 
 A working Flask + SQLite CRUD API for recipes.
 """
@@ -10,9 +10,9 @@ load_dotenv()
 load_dotenv(override=True)
 
 # from app import app
-from app import create_app
+from nutrition import create_app
 
-app = create_app("development")
+nutrition_app = create_app("development")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    nutrition_app.run(debug=True, port=5003)

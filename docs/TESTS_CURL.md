@@ -274,6 +274,17 @@ INTERNAL SERVICE TOKEN TESTS (JWT TOKEN TESTS)
 
 1. No Authorization, valid internal token
 $ curl -i -X GET "http://localhost:5002/recipes/" -H "accept: application/json" -H "X-Internal-Token: XSWT-sdfgkfdsosiojnovnonqklpsdfsdfgnjsdfbknfvbvklcfdfg"
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.9 Python/3.14.8
+Date: Thu, 05 Nov 2026 03:07:57 GMT
+Content-Type: application/json
+Content-Length: 44
+Connection: close
+
+{
+  "msg": "Missing Authorization Header"
+}
+
 
 2. Bad JWT, valid internal token
 $ curl -i -X GET "http://localhost:5002/recipes/" -H "accept: application/json" -H "X-Internal-Token: XSWT-sdfgkfdsosiojnovnonqklpsdfsdfgnjsdfbknfvbvklcfdfg" -H "Authorization: Bearer BADJWT"

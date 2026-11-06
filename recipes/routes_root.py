@@ -7,7 +7,7 @@ from recipes.middleware import require_authorization
 root_bp = Blueprint("root", __name__)
 
 @root_bp.get("/")
-def home():
+def index():
     """
     Serve the homepage of the Recipe Box API.
     ---
@@ -76,12 +76,11 @@ def healthcheck():
               type: string
             example: "<html><body><span>Recipe Box API Health: EXCEPTION</span></body></html>"
     """
-    from app.middleware import get_db
     # Get parameter: provide a default value and cast the data type
     return_type = request.args.get('type', default="html", type=str)
     try:
-        db = get_db()
-        db.execute("SELECT 1 FROM recipes LIMIT 1")
+        # TODO: PERFORM SOME SERVICE CHECKS
+        dummy = 1  # noqa: F841
     except Exception as e:  # noqa: BLE001
         if return_type == "html":
             return f"<html><body><span>Recipe Box API Health: {e}</span></body></html>", 409
@@ -96,7 +95,7 @@ def healthcheck():
     else:
         return ""
 
-@root_bp.route("/whoami", methods=["GET"])
+@root_bp.route("/me", methods=["GET"])
 @require_authorization
 def whoami(**kwargs):
     """

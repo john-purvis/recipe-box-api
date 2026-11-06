@@ -12,7 +12,7 @@ from recipes.routes_root import root_bp
 
 
 def create_app(config_name="development"):
-    print("Application starting...")
+    print("Recipe Application API starting...")
     recipe_app = Flask(__name__)
 
     config_classes = {

@@ -12,9 +12,9 @@ from users.services.auth_service import (
     update_user_for_user,
 )
 
-auth_bp = Blueprint("auth", __name__)
+users_bp = Blueprint("users", __name__)
 
-@auth_bp.post("/login")
+@users_bp.post("/login")
 @limiter.limit("3 per minute")
 def login():
     """
@@ -62,7 +62,7 @@ def login():
 
     return jsonify({'message': 'Invalid username or password'}), 401
 
-@auth_bp.post("/register")
+@users_bp.post("/register")
 @limiter.limit("5 per minute")
 def create_user():
     """
@@ -104,7 +104,7 @@ def create_user():
         return jsonify({"error": f"{message}"}), 409
     return jsonify({"success": f"registered {username}"}), 201
 
-@auth_bp.post('/logout')
+@users_bp.post('/logout')
 @require_authorization
 def logout(**kwargs):
     """
@@ -127,7 +127,7 @@ def logout(**kwargs):
         "message": "Logout successful. Please delete your token on the client."
     }), 200
 
-@auth_bp.get("/users")
+@users_bp.get("/users")
 @require_authorization
 def list_users(**kwargs):
     """
@@ -166,7 +166,7 @@ def list_users(**kwargs):
     users = list_users_for_user(user_id_str, is_admin)
     return jsonify(users), 200
 
-@auth_bp.patch('/users/<int:user_id>')
+@users_bp.patch('/users/<int:user_id>')
 @require_authorization
 def update_user(user_id, **kwargs):
     """
@@ -251,7 +251,7 @@ def update_user(user_id, **kwargs):
 
     return jsonify(user), 200
 
-@auth_bp.delete('/users/<int:user_id>')
+@users_bp.delete('/users/<int:user_id>')
 @require_authorization
 def delete_user(user_id, **kwargs):
     """

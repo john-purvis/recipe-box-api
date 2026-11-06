@@ -256,6 +256,8 @@ def list_recipes(**kwargs):
       403:
         description: Access denied (not logged in)
     """
+    if current_app.debug:
+        print("DEBUG: Verifying token for /recipes")
     internal_error = verify_internal_token()
     if internal_error:
         return internal_error
